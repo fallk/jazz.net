@@ -1,3 +1,31 @@
+//function objectFrom(arr) {
+//  return Object.assign(...arr.map( ([k, v]) => ({[k]: v}) ));
+//}
+//function objectFilter(obj, predicate) {
+//  return objectFrom(Object.entries(obj).filter(e => predicate(e[0], e[1])));
+//}
+
+function objectFilter(obj, predicate) {
+  const result = {};
+  
+  for (let key in obj) {
+    if (obj.hasOwnProperty(key) && predicate(key, obj[key])) {
+      result[key] = obj[key];
+    }
+  }
+
+  return result;
+};
+function filterMutating(obj, predicate) {
+  for (let key in obj) {
+    if (obj.hasOwnProperty(key) && !predicate(key, obj[key])) {
+      delete obj[key];
+    }
+  }
+  return obj;
+};
+
+
 function pstream(stream, ev) {
   return new Promise((resolve, reject) => {
     stream.on(ev, (...args) => {
@@ -91,14 +119,12 @@ async function extractDll(buf, pkgName, cond) {
     condition: cond,
   });
   
-  if (shouldFetchDll) {
-    await fs.writeFile('./libraries/' + pkgName + '.dll', dllWriter.toBuffer());
-  }
+  await fs.writeFile('./libraries/' + pkgName + '.dll', dllWriter.toBuffer());
 }
 
 function findBestDepMatch(metaDeps, compat) {
   if (!metaDeps.length) return {
-    $: { targetFramework: compat },
+    $: { targetFramework: "N/A" },
     dependency: []
   };
   
@@ -116,24 +142,43 @@ function findBestDepMatch(metaDeps, compat) {
 
 module.exports = async (compat, dependencies) => {
   await fs.ensureFolder('./libraries');
-  dependencies = Object.entries(dependencies).filter(e => !fs.existsSync('./libraries/' + e[0] + '.dll'));
+  dependencies = filterMutating(dependencies, (k,v) => !fs.existsSync('./libraries/' + k + '.dll'));
   
-  for (let dep of dependencies) {
-    console.log('downloading',dep);
-    const name = dep[0];
-    const version = dep[1];
-    
-    const buf = await dl(name, version);
-    const meta = await extractAndParse(buf);
-    
-    console.log(meta);
-    
-    await fs.outputJson('./_debug_meta.json', meta, { spaces: 2 });
-    
-    const metaDeps = meta.package.metadata[0].dependencies[0].group;
-    const bestDeps = findBestDepMatch(metaDeps, compat);
-    
-    dependencies
+  // repeated iteration as the object is modified
+  const iterateds = [];
+  let ks = Object.keys(dependencies);
+  while (iterateds.length < ks.length) {
+    for (let key of ks) {
+      if (iterateds.indexOf(key) > -1) continue;
+      iterateds.push(name);
+      
+      const version = dependencies[key];
+      console.log('downloading',name,version);
+      
+      const buf = await dl(name, version);
+      const meta = await extractAndParse(buf);
+      
+      console.log(meta);
+      
+      await fs.outputJson('./_debug_meta.json', meta, { spaces: 2 });
+      
+      const metaDeps = meta.package.metadata[0].dependencies[0].group;
+      const bestDeps = findBestDepMatch(metaDeps, compat);
+      const fw = bestDeps.$.targetFramework;
+      
+      // package has no deps. we'll have to guess the DLL to extract
+      if (fw == 'N/A') {
+        // TODO need better guess system, actually looking at the compat and going through the entries..
+        // perhaps we can use extractAndParse to output the entries list and we can avoid extracting more than twice...
+        extractDll(buf, name, e => true);
+        //fs.existsSync('./libraries/' + k + '.dll')
+      } else {
+        
+        extractDll(buf, name, e => true);
+      }
+      dependencies
+    }
+    ks = Object.keys(dependencies);
   }
 };
 
