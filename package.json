@@ -1,0 +1,31 @@
+{
+  "name": "jazznetbuilder",
+  "version": "1.0.0",
+  "description": "",
+  "main": "jnb.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "commander": "^2.11.0",
+    "execa": "^0.8.0",
+    "fs-extra": "github:uwx/node-fs-extra",
+    "glob": "^7.1.2",
+    "glob-promise": "^3.2.0",
+    "globby": "^6.1.0",
+    "json-minify": "github:uwx/json-minify",
+    "lodash": "^4.17.4",
+    "memory-streams": "^0.1.2",
+    "mz": "^2.7.0",
+    "naturalsort": "github:uwx/node-naturalsort",
+    "nodeshy-path": "github:uwx/nodeshy-path",
+    "request": "^2.83.0",
+    "request-promise-any": "^1.0.5",
+    "stream-buffers": "^3.0.1",
+    "stream-to-promise": "^2.2.0",
+    "unzip": "^0.1.11",
+    "xml2js-es6-promise": "^1.1.1"
+  }
+}
