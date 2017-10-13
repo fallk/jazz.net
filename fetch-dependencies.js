@@ -148,11 +148,11 @@ module.exports = async (compat, dependencies) => {
   const iterateds = [];
   let ks = Object.keys(dependencies);
   while (iterateds.length < ks.length) {
-    for (let key of ks) {
-      if (iterateds.indexOf(key) > -1) continue;
+    for (let name of ks) {
+      if (iterateds.indexOf(name) > -1) continue;
       iterateds.push(name);
       
-      const version = dependencies[key];
+      const version = dependencies[name];
       console.log('downloading',name,version);
       
       const buf = await dl(name, version);
@@ -165,6 +165,7 @@ module.exports = async (compat, dependencies) => {
       const metaDeps = meta.package.metadata[0].dependencies[0].group;
       const bestDeps = findBestDepMatch(metaDeps, compat);
       const fw = bestDeps.$.targetFramework;
+      console.log(name, ': framework :', fw, ' (expecting', compat, ')');
       
       // package has no deps. we'll have to guess the DLL to extract
       if (fw == 'N/A') {
@@ -173,10 +174,36 @@ module.exports = async (compat, dependencies) => {
         extractDll(buf, name, e => true);
         //fs.existsSync('./libraries/' + k + '.dll')
       } else {
-        
-        extractDll(buf, name, e => true);
+        let e;
+        if (fw.startsWith('.NETFramework')) {
+          // matches: net20, net45, net46
+          const holder = 'net' + fw.substring('.NETFramework'.length).replace(/\./g, '').toLowerCase();
+          e = f => f.indexOf(holder) > -1;
+        } else if (fw.startsWith('.NETPortable')) {
+          // matches: portable-net
+          e = f => f.indexOf('portable-net') > -1;
+        } else if (fw.startsWith('.NETStandard')) {
+          // matches: netstandard1.0, netstandard1.3, netstandard2.0
+          const holder = fw.substring(1).toLowerCase();
+          e = f => f.indexOf(holder) > -1;
+        } else {
+          // matches: anything!
+          e = e => true;
+        }
+        extractDll(buf, name, e);
       }
-      dependencies
+      
+      // add dependencies to map if not there
+      const realDeps = bestDeps.dependency.map(e => e.$);
+      for (let d of realDeps) {
+        if (d.id in dependencies) {
+          if (dependencies[d.id] !== d.version) {
+            console.log('VERSION MISMATCH:', d.id, 'using', dependencies[d.id], 'but found', d.version);
+          } else {
+            dependencies[d.id] = d.version;
+          }
+        }
+      }
     }
     ks = Object.keys(dependencies);
   }

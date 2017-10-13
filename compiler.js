@@ -48,6 +48,7 @@ module.exports = program => {
     .option('-w, --warn [level]', 'warning level (0-4)')
     .option('-i, --deps [deps]', 'force include dependencies to download (Name:Version;...)')
     .option('-r, --refs [refs]', 'force include project references (Ref;...)')
+    .option('-c, --no-fetch', 'force disable fetching dependencies')
     .option('-#, --defs [defines]', 'force include conditional compilation #defines')
     .action(compile);
 }
@@ -162,7 +163,9 @@ jsc [options] <source files> [[options] <source files>...]
   
   console.log('"' + args.join('" "') + '"');
   
-  await fetchDependencies(compat, fetchDeps(options, pj));
+  if (!options.noFetch) {
+    await fetchDependencies(compat, fetchDeps(options, pj));
+  }
   
   try {
     const pro = execa(path, args)
