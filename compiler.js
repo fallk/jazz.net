@@ -176,7 +176,7 @@ jsc [options] <source files> [[options] <source files>...]
     pro.stdout.pipe(process.stdout);
     pro.stderr.pipe(process.stderr);
     
-    await process;
+    await pro;
   } catch (e) {
     console.error(e);
   }
