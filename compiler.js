@@ -164,7 +164,11 @@ jsc [options] <source files> [[options] <source files>...]
   console.log('"' + args.join('" "') + '"');
   
   if (!options.noFetch) {
-    await fetchDependencies(compat, fetchDeps(options, pj));
+    try {
+      await fetchDependencies(compat, fetchDeps(options, pj));
+    } catch (e) {
+      console.error(e);
+    }
   }
   
   try {

@@ -26,6 +26,7 @@
     "stream-buffers": "^3.0.1",
     "stream-to-promise": "^2.2.0",
     "unzip": "^0.1.11",
+    "unzipper": "github:uwx/node-unzipper",
     "xml2js-es6-promise": "^1.1.1"
   }
 }
